@@ -1,0 +1,6 @@
+1713251686323:help
+1713252313143:create book --title a --author b --publisher c --price 0
+1713252382783:create book --title t --author a --publisher p -- price 0
+1713252398038:create book --title t --author a --publisher p -- price 0.0
+1713252435593:create book --title t --author a --publisher p --price 0
+1713252880228:list books
