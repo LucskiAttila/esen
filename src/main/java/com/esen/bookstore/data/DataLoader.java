@@ -1,9 +1,9 @@
 package com.esen.bookstore.data;
 
 import com.esen.bookstore.model.Book;
-import com.esen.bookstore.model.BookStore;
+import com.esen.bookstore.model.Bookstore;
 import com.esen.bookstore.repository.BookRepository;
-import com.esen.bookstore.repository.BookStoreRepository;
+import com.esen.bookstore.repository.BookstoreRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -24,35 +24,45 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class DataLoader {
+
     private final BookRepository bookRepository;
-    private final BookStoreRepository bookStoreRepository;
+    private final BookstoreRepository bookstoreRepository;
 
     @Value("classpath:data/books.json")
     private Resource booksResource;
+
     @Value("classpath:data/bookstores.json")
-    private Resource bookSotreResource;
+    private Resource bookstoresResource;
 
     @PostConstruct
     public void loadData() {
         var objectMapper = new ObjectMapper();
+        var booksType = new TypeReference<List<Book>>(){};
+        var bookstoresType = new TypeReference<List<Bookstore>>(){};
+
         try {
             var booksJson = StreamUtils.copyToString(booksResource.getInputStream(), StandardCharsets.UTF_8);
-            var books = objectMapper.readValue(booksJson, new TypeReference<List<Book>>() {} );
+            var books = objectMapper.readValue(booksJson, booksType);
             bookRepository.saveAll(books);
-            var booksStoreJson = StreamUtils.copyToString(bookSotreResource.getInputStream(), StandardCharsets.UTF_8);
-            var bookStore = objectMapper.readValue(booksStoreJson, new TypeReference<List<BookStore>>() {} );
-            bookStore.forEach(bookStore1 -> {
-                bookStore1.setInventory(books.stream()
+
+            var bookstoresJson = StreamUtils.copyToString(bookstoresResource.getInputStream(), StandardCharsets.UTF_8);
+            var bookstores = objectMapper.readValue(bookstoresJson, bookstoresType);
+
+            bookstores.forEach(bookstore -> {
+                bookstore.setInventory(books.stream()
                         .collect(Collectors.toMap(
                                 book -> book,
                                 book -> ThreadLocalRandom.current().nextInt(1, 50)
                         )));
             });
 
-            bookStoreRepository.saveAll(bookStore);
-        }
-        catch (IOException e) {
+            bookstoreRepository.saveAll(bookstores);
+
+            log.info("Loaded entities into database");
+
+        } catch (IOException e) {
             log.error("Cannot load data into database", e);
         }
     }
+
 }
